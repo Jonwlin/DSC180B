@@ -1,72 +1,7 @@
-#### WIKIMONITOR ETL LIGHTDUMP DOWNLOADING ####
+#### ENWIKI RAW DATA DOWNLOADING AND PARSING ####
 
 import os
-from lxml import etree
-
-#download light dump from wikimonitor
-def download_lightdump(outdir):
-    import requests
-    import urllib.request
-    from bs4 import BeautifulSoup
-    import os
-
-    url = 'https://dumps.wikimedia.org/enwiki/20200101/'
-
-    download_url = "http://wwm.phy.bme.hu/LD/ld_en_wiki.zip"
-    
-    filename = os.path.join(outdir, "lightdump.zip") #generate filename
-
-    if not os.path.exists(outdir):
-        os.makedirs(outdir, exist_ok=True)
-        
-    if os.path.exists(filename):
-        return
-
-    print("Downloading from: " + download_url)
-    urllib.request.urlretrieve(download_url, filename) #pass filename to urllib request
-    
-    return filename
-        
-#extract lightdump
-def extract_lightdump(filepath, outdir):
-    import zipfile
-    
-    filename = outdir + "/" + 'en_wiki.txt'
-    if os.path.exists(filename):
-        print("Extracted Lightdump already exists")
-        return filename
-    
-    with zipfile.ZipFile(filepath, 'r') as zip_ref:
-        zip_ref.extractall(outdir)
-        
-    return filename
-        
-def generate_testdata(filepath_to_lightdump, outdir):    
-    '''
-    pass in filepath to lightdump txt
-    pass in out directory ('./data/temp/')
-    '''
-    num_test_data_articles = 10000 #changeable
-    
-    outfile = os.path.join(outdir, "en_wiki_test.txt")
-    
-    if not os.path.exists(outdir):
-        os.makedirs(outdir, exist_ok=True)
-    
-    with open(filepath_to_lightdump) as file:
-        with open(outfile, 'w') as outfile:
-            count = 0
-            for line in file:
-                
-                temp_line = line.strip().split(" ")
-                if len(temp_line) == 1:
-                    count += 1
-                    
-                if count > num_test_data_articles:
-                    break
-                else:
-                    outfile.write(line)
-    return outfile.name
+      
         
 def process_lightdump(filepath_to_lightdump):
     '''
@@ -80,17 +15,11 @@ def process_lightdump(filepath_to_lightdump):
     #return dictionary of mscores
     return df
                
-#### END OF WIKIMONITOR ETL LIGHTDUMP DOWNLOADING ####
-
-
-#### EN-WIKI-DUMP DATA PROCESSING ####
-
 #Download the zips from wikipedia dump
 def download_enwiki_zips(num_files_download, outdir, overwrite=False):
     '''
     download enwiki data dumps, number defines how many
     '''
-
     import requests
     import urllib.request
     from bs4 import BeautifulSoup
@@ -168,6 +97,8 @@ class Revision:
     
 #parse the file, calculate lightdump information, output to outfile
 def parse_enwiki_to_lightdump(filepath, outfile, outdir, articles=[]):
+    
+    from lxml import etree
 
     context = etree.iterparse(filepath, tag='{http://www.mediawiki.org/xml/export-0.10/}page', encoding='utf-8')
     nsmap = {'ns': 'http://www.mediawiki.org/xml/export-0.10/'}
@@ -257,7 +188,7 @@ def parse_enwiki_to_lightdump(filepath, outfile, outdir, articles=[]):
         if len(articles) == 0 or page_title in articles:
             article_count -= 1
     
-            print("Writing {} {} revisions to lightdump.txt".format(page_title, len(page_results))
+            print("Writing {} {} revisions to lightdump.txt".format(page_title, len(page_results)))
             with open(outdir + "/" + outfile, 'a') as file:
                 file.write(page_title.strip() + '\n')
                 for i in range(len(page_results) - 1, -1, -1):

@@ -10,10 +10,10 @@ import warnings
 warnings.filterwarnings("ignore")
 
 sys.path.insert(0, 'src') # add library code to path
-from etl import process_lightdump
-from etl import parse_enwiki_to_lightdump
-from etl import download_enwiki_zips
-from etl import extract_7zip
+from wikiparser import process_lightdump
+from wikiparser import parse_enwiki_to_lightdump
+from wikiparser import download_enwiki_zips
+from wikiparser import extract_7zip
 from m_score import mscore_over_time
 
 DATA_PARAMS = 'config/data-params.json'
@@ -25,15 +25,12 @@ def load_params(fp):
     return param
 
 def main(targets):
-
     # make the clean target
     if 'clean' in targets:
         print("Cleaning data")
         shutil.rmtree('data/temp', ignore_errors=True)
         shutil.rmtree('data/out', ignore_errors=True)
-
-    #test data process analysis
-
+        
     # take small chunk of data
     if 'test' in targets:
         params = load_params(TEST_PARAMS)
@@ -45,8 +42,15 @@ def main(targets):
 
     #downloads raw data
     if 'data' in targets:
-        #download enwiki files
+        
+        test_params = load_params(TEST_PARAMS)
+
+        outdir = test_params['outdir']
         zip_outdir = outdir + "/raw/zips"
+
+        num_files_to_download = test_params["num_files_download"]
+        
+        #download enwiki files
         download_enwiki_zips(num_files_to_download, zip_outdir , False)
         zips = os.listdir(zip_outdir)
         #extract enwiki files
