@@ -218,7 +218,7 @@ def download_metadata_zips(num_files_download, outdir, overwrite=False):
     from bs4 import BeautifulSoup
     import os
 
-    url = 'https://dumps.wikimedia.org/enwiki/20200101/'
+    url = 'https://dumps.wikimedia.org/enwiki/20200401/'
     response = requests.get(url)
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -306,6 +306,9 @@ def parse_metadata_to_lightdump(filepath, outfile, outdir, articles=[]):
 
     with open(outdir + "/" + outfile, 'w') as file:
         file.write("")
+        
+    with open(outdir + "/" + 'article_titles.txt', 'a') as article_file:
+        article_file.write("")
 
     for event, elem in context:
 
@@ -384,7 +387,7 @@ def parse_metadata_to_lightdump(filepath, outfile, outdir, articles=[]):
     
             print("Writing {} {} revisions to {}".format(page_title, len(page_results), outfile))
             with open(outdir + "/" + outfile, 'a') as file:
-                with open(outdir + "/" + 'article_titles.txt', 'w') as article_file:
+                with open(outdir + "/" + 'article_titles.txt', 'a') as article_file:
                     file.write(page_title.strip() + '\n')
                     article_file.write(page_title.strip() + "\n")
                     for i in range(len(page_results) - 1, -1, -1):
