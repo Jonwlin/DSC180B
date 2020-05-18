@@ -231,9 +231,9 @@ def download_metadata_zips(num_files_download, outdir, overwrite=False):
         print("Downloading enwiki file: (" + str(i+1) + "/" + str(num_files_download) + ")")
 
         link = ul_links[i]['href']
-        download_url = 'https://dumps.wikimedia.org/enwiki/20200101/enwiki-20200101-stub-meta-history' + str(i+1) + '.xml.gz'
+        download_url = 'https://dumps.wikimedia.org/enwiki/20200401/enwiki-20200401-stub-meta-history' + str(i+1) + '.xml.gz'
         print(download_url)
-        filename = os.path.join(outdir, "metadata-20200101-" + str(i+1) + ".xml.gz") #generate filename
+        filename = os.path.join(outdir, "metadata-20200401-" + str(i+1) + ".xml.gz") #generate filename
 
         #if file name exists then skip, and not overwrite
         if not overwrite and os.path.exists(filename):

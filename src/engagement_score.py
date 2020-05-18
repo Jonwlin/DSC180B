@@ -181,31 +181,43 @@ def editor_engagement_score(df, outdir="./data/out"):
     diff_nunique.insert(0, 0)
     df['diff_nunique'] = diff_nunique
     df['product'] = df['diff_edits'] * df['diff_nunique']
-    df.to_csv(outdir + "/engagement_scores.csv', index=False)
+    df.to_csv(outdir + "/engagement_scores.csv", index=False)
 
     return df[['timestamp', 'diff_edits', 'diff_nunique', 'product']]
 
 
 #kenny's functions
 
-def get_page_views(article_txt_path, output_path):
+def get_page_views(article_names, output_path):
     p = PageviewsClient(user_agent="kez070@ucsd.edu Selfie, Cat, and Dog analysis")
 
-    #read the text file with all article names
-    articles = open(article_txt_path, 'r') 
-    article_names = []
-    Lines = articles.readlines() 
-    for line in Lines:
-        article_names.append(line.rstrip())
+#     #read the text file with all article names
+#     articles = open(article_txt_path, 'r') 
+#     article_names = []
+#     Lines = articles.readlines() 
+#     for line in Lines:
+#         article_names.append(line.rstrip())
         
     #100 articles at a time query the api for the page views data
     main_dfs = []
-    for i in range(100,len(article_names),100):
-        values = p.article_views('en.wikipedia',article_names[i-100:i], granularity='monthly', start='20150101', end='20191101')
+    if len(article_names) > 100:
+        for i in range(100,len(article_names),100):
+            values = p.article_views('en.wikipedia',article_names[i-100:i], granularity='monthly', start='20150101', end='20191101')
+            all_keys = list(values.keys())
+            all_keys.sort()
+            val_dict = []
+            for x in article_names[i-100:i]:
+                for key in all_keys:
+                    val_dict.append({"name":x,"time":key, "views":values[key][x]})
+            df = pd.DataFrame(val_dict)
+            main_dfs.append(df)
+    else:
+        values = p.article_views('en.wikipedia',article_names[0:len(article_names)], granularity='monthly', start='20150101', end='20191101')
         all_keys = list(values.keys())
         all_keys.sort()
         val_dict = []
-        for x in article_names[i-100:i]:
+#         print(values)
+        for x in article_names:
             for key in all_keys:
                 val_dict.append({"name":x,"time":key, "views":values[key][x]})
         df = pd.DataFrame(val_dict)
@@ -216,13 +228,13 @@ def get_page_views(article_txt_path, output_path):
         main_dfs[i] = main_dfs[i].fillna(0)
     df = pd.concat(main_dfs)
     df.to_csv(output_path)
-
-def compute_engagement_score(page_views_path, page_sizedb_path, output_path):
+    
+def content_engagement_score(page_views_path, page_sizedb_path, output_path):
     pd.set_option('mode.chained_assignment', None)
 
     df = pd.read_csv(page_views_path)
     df['time'] = pd.to_datetime(df['time'])
-    view_df = df[df['time']>datetime.datetime(2015, 6, 17)]
+    view_df = df[df['time']> datetime(2015, 6, 17)]
 
     con = sqlite3.connect(page_sizedb_path)
     size_df = pd.read_sql_query("SELECT * from ARTICLES", con)
@@ -230,7 +242,7 @@ def compute_engagement_score(page_views_path, page_sizedb_path, output_path):
     #getting rid of nones in the avg size columns for months without edits
     size_df = size_df.fillna(method='ffill')
     size_df['timestamp'] = pd.to_datetime(size_df['timestamp'])
-    size_df = size_df[size_df['timestamp']>datetime.datetime(2015, 7, 17)]
+    size_df = size_df[size_df['timestamp'] > datetime(2015, 7, 17)]
     size_df['timestamp'] = size_df.timestamp.apply(lambda x:x.replace(day=1))
     size_df['avg_byte_size'] = pd.to_numeric(size_df['avg_byte_size'])
 
