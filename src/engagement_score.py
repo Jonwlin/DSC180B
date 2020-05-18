@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd
 from datetime import datetime
+from mwviews.api import PageviewsClient
 import seaborn as sns
 import matplotlib.pyplot as plt
 import sys
@@ -176,3 +177,85 @@ def editor_engagement_score(df):
     df['product'] = df['diff_edits'] * df['diff_nunique']
 
     return df[['timestamp', 'diff_edits', 'diff_nunique', 'product']]
+
+
+#kenny's functions
+
+def get_page_views(article_txt_path, output_path):
+    p = PageviewsClient(user_agent="kez070@ucsd.edu Selfie, Cat, and Dog analysis")
+
+    #read the text file with all article names
+    articles = open(article_txt_path, 'r') 
+    article_names = []
+    Lines = articles.readlines() 
+    for line in Lines:
+        article_names.append(line.rstrip())
+        
+    #100 articles at a time query the api for the page views data
+    main_dfs = []
+    for i in range(100,len(article_names),100):
+        values = p.article_views('en.wikipedia',article_names[i-100:i], granularity='monthly', start='20150101', end='20191101')
+        all_keys = list(values.keys())
+        all_keys.sort()
+        val_dict = []
+        for x in article_names[i-100:i]:
+            for key in all_keys:
+                val_dict.append({"name":x,"time":key, "views":values[key][x]})
+        df = pd.DataFrame(val_dict)
+        main_dfs.append(df)
+        
+    #write the resultant dataframe to a csv output
+    for i in range(len(main_dfs)):
+        main_dfs[i] = main_dfs[i].fillna(0)
+    df = pd.concat(main_dfs)
+    df.to_csv(output_path)
+
+def compute_engagement_score(page_views_path, page_sizedb_path, output_path):
+    pd.set_option('mode.chained_assignment', None)
+
+    df = pd.read_csv(page_views_path)
+    df['time'] = pd.to_datetime(df['time'])
+    view_df = df[df['time']>datetime.datetime(2015, 6, 17)]
+
+    con = sqlite3.connect(page_sizedb_path)
+    size_df = pd.read_sql_query("SELECT * from ARTICLES", con)
+
+    #getting rid of nones in the avg size columns for months without edits
+    size_df = size_df.fillna(method='ffill')
+    size_df['timestamp'] = pd.to_datetime(size_df['timestamp'])
+    size_df = size_df[size_df['timestamp']>datetime.datetime(2015, 7, 17)]
+    size_df['timestamp'] = size_df.timestamp.apply(lambda x:x.replace(day=1))
+    size_df['avg_byte_size'] = pd.to_numeric(size_df['avg_byte_size'])
+
+    unique_size_names = size_df['article_title'].unique()
+
+    times = pd.date_range(start='7/1/2015', end='12/01/2019',freq='MS')
+    names = list(unique_size_names)
+    scores = []
+    for i in range(len(names)):
+        current_name = names[i]
+        current_size = size_df[size_df['article_title']==current_name]
+        current_views = view_df[view_df['name']==current_name]
+    #     print(current_size.head())
+    #     print(current_views.head())
+        current_size['avg_byte_size'] = (current_size['avg_byte_size']-current_size['avg_byte_size'].mean())/current_size['avg_byte_size'].std()
+        current_views['views'] = current_views['views'].transform(lambda x: (x - x.mean()) / x.std())
+
+        try:
+            for x in range(1,len(times)):
+                cur_size = current_size[current_size['timestamp']==times[x]]
+                prev_size = current_size[current_size['timestamp']==times[x-1]]
+
+                cur_view = current_views[current_views['time']==times[x]]
+                pre_view = current_views[current_views['time']==times[x-1]]
+
+
+                score = abs(cur_size.avg_byte_size.values[0]-prev_size.avg_byte_size.values[0])*(cur_view.views.values[0]-pre_view.views.values[0])
+                scores.append((current_name,times[x],score))
+
+        except:
+            print(current_name)
+            print("this article didnt go up to 2019 maybe")
+
+    df = pd.DataFrame(scores, columns =['Name', 'date', 'Score']) 
+    df.to_csv(output_path)
