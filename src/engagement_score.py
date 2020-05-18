@@ -259,3 +259,8 @@ def compute_engagement_score(page_views_path, page_sizedb_path, output_path):
 
     df = pd.DataFrame(scores, columns =['Name', 'date', 'Score']) 
     df.to_csv(output_path)
+
+
+### example calls
+# get_page_views('not_used/article_titles.txt','page_views.csv')
+# compute_engagement_score("page_views.csv", "articles.db", "final_score.csv")
