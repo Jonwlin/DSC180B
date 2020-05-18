@@ -166,7 +166,13 @@ def selectArticlesDB(dbfile, article_titles):
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     return df
 
-def editor_engagement_score(df):
+def editor_engagement_score(df, outdir="./data/out"):
+    """ calculate the editor engagement score given a dataframe from lightdump parsing
+    
+    Keyword arguments:
+    df -- dataframe with articles averaged over month
+    outdir -- outdir for the csv file output
+    """
     diff_edits = [df['edits'][x] - df['edits'][x-1] for x in range(1, len(df))]
     diff_edits.insert(0,0)
     df['diff_edits'] = diff_edits
@@ -174,5 +180,6 @@ def editor_engagement_score(df):
     diff_nunique.insert(0, 0)
     df['diff_nunique'] = diff_nunique
     df['product'] = df['diff_edits'] * df['diff_nunique']
+    df.to_csv(outdir + "/engagement_scores.csv', index=False)
 
     return df[['timestamp', 'diff_edits', 'diff_nunique', 'product']]
