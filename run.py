@@ -121,7 +121,7 @@ def main(targets):
 
         #parse extracted enwiki to lightdump
         file_to_parse = "./data/raw/extracted/metadata-20200401-1.xml"
-        lightdump_filename = "lightdump.txt"
+        lightdump_filename = "popularity_dump.txt"
         temp_dir = "./data/temp"
 
         print("Parsing Wikidump to Lightdump")

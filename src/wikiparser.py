@@ -303,6 +303,10 @@ def parse_metadata_to_lightdump(filepath, outfile, outdir, articles=[]):
             
     if not os.path.exists(outdir):
         os.makedirs(outdir, exist_ok=True)
+        
+    if os.path.exists(outdir + "/" + outfile):
+        print("Lightdump File Already Exists")
+        return
 
     with open(outdir + "/" + outfile, 'w') as file:
         file.write("")

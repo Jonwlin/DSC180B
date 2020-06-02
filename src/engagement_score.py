@@ -78,6 +78,10 @@ def lightdump_to_db(lightdump_file, outfile, num_articles=3000):
     article_titles = []
     article_count = 0
     
+    if os.path.exists(outfile):
+        print("DB File already exists")
+        return
+    
     # Connect to SQL Table
     conn = sqlite3.connect(outfile)
     c = conn.cursor()
@@ -87,9 +91,10 @@ def lightdump_to_db(lightdump_file, outfile, num_articles=3000):
 
     with open(lightdump_file) as lightdump:
         for line in lightdump:
+#             print(line)
             temp_line = line.strip().split(" ")
 
-            if start and len(temp_line) == 1:
+            if start and len(temp_line) == 5 and temp_line[2] == '1':
                 start = False
                 article = pd.DataFrame({"article": article_title, "timestamp": timestamps[::-1], "byte_size": byte_size[::-1], "editor": editor[::-1]})
                 article.index = article['timestamp']
@@ -130,9 +135,10 @@ def lightdump_to_db(lightdump_file, outfile, num_articles=3000):
                 editor.append(temp_line[4])
                 article_titles.append(article_title)
 
-            if not start:
+            if not start and len(temp_line) == 1:
                 start = True
                 article_title = temp_line[0]
+    
     
     print("Exporting to DB File")
     conn.commit()
@@ -176,14 +182,14 @@ def editor_engagement_score(df, outdir="./data/out"):
     """
     diff_edits = [df['edits'][x] - df['edits'][x-1] for x in range(1, len(df))]
     diff_edits.insert(0,0)
-    df['diff_edits'] = diff_edits
+    df['std_diff_edits'] = (diff_edits - np.mean(diff_edits)) / np.std(diff_edits)
     diff_nunique = [df['nunique_editors'][x] - df['nunique_editors'][x-1] for x in range(1, len(df))]
     diff_nunique.insert(0, 0)
-    df['diff_nunique'] = diff_nunique
-    df['product'] = df['diff_edits'] * df['diff_nunique']
-    df.to_csv(outdir + "/engagement_scores.csv", index=False)
+    df['std_diff_nunique'] = (diff_nunique - np.mean(diff_nunique)) / np.std(diff_nunique)
+    df['editor_engagement'] = df['std_diff_edits'] * df['std_diff_nunique']
+    df.to_csv(outdir + "/editor_engagement.csv", index=False)
 
-    return df[['timestamp', 'diff_edits', 'diff_nunique', 'product']]
+    return df[['timestamp', 'std_diff_edits', 'std_diff_nunique', 'editor_engagement']]
 
 
 #kenny's functions
@@ -202,24 +208,24 @@ def get_page_views(article_names, output_path):
     main_dfs = []
     if len(article_names) > 100:
         for i in range(100,len(article_names),100):
-            values = p.article_views('en.wikipedia',article_names[i-100:i], granularity='monthly', start='20150101', end='20191101')
+            values = p.article_views('en.wikipedia',article_names[i-100:i], granularity='monthly', start='20150101', end='20200401')
             all_keys = list(values.keys())
             all_keys.sort()
             val_dict = []
             for x in article_names[i-100:i]:
                 for key in all_keys:
-                    val_dict.append({"name":x,"time":key, "views":values[key][x]})
+                    val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
             df = pd.DataFrame(val_dict)
             main_dfs.append(df)
     else:
-        values = p.article_views('en.wikipedia',article_names[0:len(article_names)], granularity='monthly', start='20150101', end='20191101')
+        values = p.article_views('en.wikipedia',article_names[0:len(article_names)], granularity='monthly', start='20150101', end='20200401')
         all_keys = list(values.keys())
         all_keys.sort()
         val_dict = []
 #         print(values)
         for x in article_names:
             for key in all_keys:
-                val_dict.append({"name":x,"time":key, "views":values[key][x]})
+                val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
         df = pd.DataFrame(val_dict)
         main_dfs.append(df)
         
@@ -227,14 +233,17 @@ def get_page_views(article_names, output_path):
     for i in range(len(main_dfs)):
         main_dfs[i] = main_dfs[i].fillna(0)
     df = pd.concat(main_dfs)
+    print("Writing Page View Data to -- " + output_path)
     df.to_csv(output_path)
+    
+    return df
     
 def content_engagement_score(page_views_path, page_sizedb_path, output_path):
     pd.set_option('mode.chained_assignment', None)
 
     df = pd.read_csv(page_views_path)
-    df['time'] = pd.to_datetime(df['time'])
-    view_df = df[df['time']> datetime(2015, 6, 17)]
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    view_df = df[df['timestamp']> datetime(2015, 6, 17)]
 
     con = sqlite3.connect(page_sizedb_path)
     size_df = pd.read_sql_query("SELECT * from ARTICLES", con)
@@ -248,13 +257,13 @@ def content_engagement_score(page_views_path, page_sizedb_path, output_path):
 
     unique_size_names = size_df['article_title'].unique()
 
-    times = pd.date_range(start='7/1/2015', end='12/01/2019',freq='MS')
+    times = pd.date_range(start='7/1/2015', end='04/01/2020',freq='MS')
     names = list(unique_size_names)
     scores = []
     for i in range(len(names)):
         current_name = names[i]
         current_size = size_df[size_df['article_title']==current_name]
-        current_views = view_df[view_df['name']==current_name]
+        current_views = view_df[view_df['article_title']==current_name]
     #     print(current_size.head())
     #     print(current_views.head())
         current_size['avg_byte_size'] = (current_size['avg_byte_size']-current_size['avg_byte_size'].mean())/current_size['avg_byte_size'].std()
@@ -265,21 +274,26 @@ def content_engagement_score(page_views_path, page_sizedb_path, output_path):
                 cur_size = current_size[current_size['timestamp']==times[x]]
                 prev_size = current_size[current_size['timestamp']==times[x-1]]
 
-                cur_view = current_views[current_views['time']==times[x]]
-                pre_view = current_views[current_views['time']==times[x-1]]
+                cur_view = current_views[current_views['timestamp']==times[x]]
+                pre_view = current_views[current_views['timestamp']==times[x-1]]
 
 
                 score = abs(cur_size.avg_byte_size.values[0]-prev_size.avg_byte_size.values[0])*(cur_view.views.values[0]-pre_view.views.values[0])
                 scores.append((current_name,times[x],score))
 
         except:
-            print(current_name)
-            print("this article didnt go up to 2019 maybe")
+            continue
+#             print(current_name)
+#             print("this article didnt go up to 2020 maybe")
 
-    df = pd.DataFrame(scores, columns =['Name', 'date', 'Score']) 
+    print("Writing Content Engagement Score to -- " + output_path)
+    df = pd.DataFrame(scores, columns =['article_title', 'timestamp', 'content_engagement']) 
     df.to_csv(output_path)
+    
+    return df
+    
 
 
 ### example calls
 # get_page_views('not_used/article_titles.txt','page_views.csv')
-# compute_engagement_score("page_views.csv", "articles.db", "final_score.csv")
+# content_engagement_score("page_views.csv", "articles.db", "final_score.csv")
