@@ -5,6 +5,30 @@
         <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
         <script type="text/javascript" src="engagement_scores.json"></script>
         <style>
+          .collapsible {
+            background-color: #777;
+            color: white;
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+          }
+          
+          .active, .collapsible:hover {
+            background-color: #555;
+          }
+          
+          .content {
+            padding: 0 18px;
+            display: none;
+            overflow: hidden;
+            background-color: #f1f1f1;
+          }
+        </style>
+        <style>
         * {
           box-sizing: border-box;
         }
@@ -71,19 +95,54 @@
 
     <body>
 
-    <h2>Autocomplete</h2>
+    <h2>Engagement Score</h2>
 
-    <p>Start typing:</p>
+    <p></p>
+
+    <p></p>
+    <button type="button" class="collapsible">Project Description</button>
+    <div class="content">
+      <p>Our project examines user engagement in Wikipedia and how that engagement fares in the scope of the supply and demand of content on Wikipedia. Some important definitions to note: </p>
+      <p>User engagement: how users or viewers of content interact with the given content </p>
+      <p>Supply: We characterize the supply of Wikipedia content as edit history data which gives us factors such as how much the byte size of a page has changed over time and how many edits a Wikipedia page has undergone</p>
+      <p>Demand: We characterize the demand of Wikipedia content as Wikipedia page views data, which gives us the factor of how many users are consuming the information on a given Wikipedia page</p>
+    </div>
+    <button type="button" class="collapsible">Open Section 2</button>
+    <div class="content">
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    </div>
+    <button type="button" class="collapsible">Open Section 3</button>
+    <div class="content">
+      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    </div>
+    <p></p>
 
     <!--Make sure the form has the autocomplete function switched off:-->
     <form autocomplete="off">
         <div class="autocomplete" style="width:300px;">
-            <input id="myInput" type="text" placeholder="Country">
+            <input id="myInput" type="text" placeholder="Article Name">
         </div>
             <input type="submit" onclick=drawEngagement()>
     </form>
 
     <div id="linechart_div" style="margin-top: 30px; width: 50%;"></div>
+
+    <script>
+      var coll = document.getElementsByClassName("collapsible");
+      var i;
+      
+      for (i = 0; i < coll.length; i++) {
+        coll[i].addEventListener("click", function() {
+          this.classList.toggle("active");
+          var content = this.nextElementSibling;
+          if (content.style.display === "block") {
+            content.style.display = "none";
+          } else {
+            content.style.display = "block";
+          }
+        });
+      }
+      </script>
 
     <script>
         google.charts.load('current', {'packages':['line']});
