@@ -1,19 +1,235 @@
-<!doctype html>
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script type="text/javascript" src="engagement_scores.json"></script>
+        <style>
 
-<html lang="en">
-<head>
-  <meta charset="utf-8">
 
-  <title>The HTML5 Herald</title>
-  <meta name="description" content="The HTML5 Herald">
-  <meta name="author" content="SitePoint">
+        * {
+          box-sizing: border-box;
+        }
 
-  <link rel="stylesheet" href="css/styles.css">
+        body {
+          font: 16px Arial;
+          margin: 5%;
+        }
 
-</head>
+        /*the container must be positioned relative:*/
+        .autocomplete {
+          position: relative;
+          display: inline-block;
+        }
 
-<body>
-  <text>Hello World</text>
-  <script src="js/scripts.js"></script>
-</body>
+        input {
+          border: 1px solid transparent;
+          background-color: #f1f1f1;
+          padding: 10px;
+          font-size: 16px;
+        }
+
+        input[type=text] {
+          background-color: #f1f1f1;
+          width: 100%;
+        }
+
+        input[type=submit] {
+          background-color: DodgerBlue;
+          color: #fff;
+          cursor: pointer;
+        }
+
+        .autocomplete-items {
+          position: absolute;
+          border: 1px solid #d4d4d4;
+          border-bottom: none;
+          border-top: none;
+          z-index: 99;
+          /*position the autocomplete items to be the same width as the container:*/
+          top: 100%;
+          left: 0;
+          right: 0;
+        }
+
+        .autocomplete-items div {
+          padding: 10px;
+          cursor: pointer;
+          background-color: #fff;
+          border-bottom: 1px solid #d4d4d4;
+        }
+
+        /*when hovering an item:*/
+        .autocomplete-items div:hover {
+          background-color: #e9e9e9;
+        }
+
+        /*when navigating through the items using the arrow keys:*/
+        .autocomplete-active {
+          background-color: DodgerBlue !important;
+          color: #ffffff;
+        }
+        </style>
+    </head>
+
+    <body>
+
+    <h2>DSC 180B Wikipedia Article Engagement Score</h2>
+
+    <p>Start typing:</p>
+
+    <!--Make sure the form has the autocomplete function switched off:-->
+    <form autocomplete="off">
+        <div class="autocomplete" style="width:300px;">
+            <input id="myInput" type="text" placeholder="Country">
+        </div>
+    </form>
+
+    <div id="linechart_div" style="margin-top: 30px; width: 50%;"></div>
+
+    <script>
+        google.charts.load('current', {'packages':['line']});
+        // google.charts.setOnLoadCallback(drawChart);
+
+        function drawEngagement(article_title) {
+
+            console.log("DRAWING ENGAGEMENT ")
+            console.log(article_title)
+            var dataGraph = new google.visualization.DataTable();
+
+            dataGraph.addColumn('datetime', 'Time');
+            dataGraph.addColumn('number', 'Editor Score');
+            dataGraph.addColumn('number', 'Content Score');
+            dataGraph.addColumn('number', 'Engagement Score');
+
+            data[article_title].forEach(function updateGraph(l) {
+                dataGraph.addRow(
+                        [new Date(l[0]), l[1], l[2] , l[3] ]
+                );
+            })
+
+            var options = {
+                chart: {
+                  title: article_title,
+                  subtitle: 'Engagement Score'
+                }
+            };
+
+            var graph = new google.charts.Line(document.getElementById('linechart_div'));
+
+            graph.draw(dataGraph, google.charts.Line.convertOptions(options));
+        }
+
+        function autocomplete(inp, arr) {
+          /*the autocomplete function takes two arguments,
+          the text field element and an array of possible autocompleted values:*/
+          var currentFocus;
+          /*execute a function when someone writes in the text field:*/
+          inp.addEventListener("input", function(e) {
+              var a, b, i, val = this.value;
+              /*close any already open lists of autocompleted values*/
+              closeAllLists();
+              if (!val) { return false;}
+              currentFocus = -1;
+              /*create a DIV element that will contain the items (values):*/
+              a = document.createElement("DIV");
+              a.setAttribute("id", this.id + "autocomplete-list");
+              a.setAttribute("class", "autocomplete-items");
+              /*append the DIV element as a child of the autocomplete container:*/
+              this.parentNode.appendChild(a);
+              /*for each item in the array...*/
+              for (i = 0; i < arr.length; i++) {
+                /*check if the item starts with the same letters as the text field value:*/
+                if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+                  /*create a DIV element for each matching element:*/
+                  b = document.createElement("DIV");
+                  /*make the matching letters bold:*/
+                  b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
+                  b.innerHTML += arr[i].substr(val.length);
+                  /*insert a input field that will hold the current array item's value:*/
+                  b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
+                  /*execute a function when someone clicks on the item value (DIV element):*/
+                  b.addEventListener("click", function(e) {
+                      /*insert the value for the autocomplete text field:*/
+                      inp.value = this.getElementsByTagName("input")[0].value;
+                      console.log("HERE")
+                      console.log(inp.value)
+                      drawEngagement(inp.value)
+                      /*close the list of autocompleted values,
+                      (or any other open lists of autocompleted values:*/
+                      closeAllLists();
+                  });
+                  a.appendChild(b);
+                }
+              }
+          });
+
+          /*execute a function presses a key on the keyboard:*/
+          inp.addEventListener("keydown", function(e) {
+              var x = document.getElementById(this.id + "autocomplete-list");
+              if (x) x = x.getElementsByTagName("div");
+              if (e.keyCode == 40) {
+                /*If the arrow DOWN key is pressed,
+                increase the currentFocus variable:*/
+                currentFocus++;
+                /*and and make the current item more visible:*/
+                addActive(x);
+              } else if (e.keyCode == 38) { //up
+                /*If the arrow UP key is pressed,
+                decrease the currentFocus variable:*/
+                currentFocus--;
+                /*and and make the current item more visible:*/
+                addActive(x);
+              } else if (e.keyCode == 13) {
+                /*If the ENTER key is pressed, prevent the form from being submitted,*/
+                e.preventDefault();
+                if (currentFocus > -1) {
+                  /*and simulate a click on the "active" item:*/
+                  if (x) x[currentFocus].click();
+                }
+              }
+          });
+
+          function addActive(x) {
+            /*a function to classify an item as "active":*/
+            if (!x) return false;
+            /*start by removing the "active" class on all items:*/
+            removeActive(x);
+            if (currentFocus >= x.length) currentFocus = 0;
+            if (currentFocus < 0) currentFocus = (x.length - 1);
+            /*add class "autocomplete-active":*/
+            x[currentFocus].classList.add("autocomplete-active");
+          }
+
+          function removeActive(x) {
+            /*a function to remove the "active" class from all autocomplete items:*/
+            for (var i = 0; i < x.length; i++) {
+              x[i].classList.remove("autocomplete-active");
+            }
+          }
+
+          function closeAllLists(elmnt) {
+            /*close all autocomplete lists in the document,
+            except the one passed as an argument:*/
+            var x = document.getElementsByClassName("autocomplete-items");
+            for (var i = 0; i < x.length; i++) {
+              if (elmnt != x[i] && elmnt != inp) {
+                x[i].parentNode.removeChild(x[i]);
+              }
+            }
+          }
+
+          /*execute a function when someone clicks in the document:*/
+          document.addEventListener("click", function (e) {
+              closeAllLists(e.target);
+          });
+      }
+
+        var article_titles = ["Blizzard_Entertainment", "American_League_Championship_Series", 'Anarchism', 'Autism', 'Albedo', 'A', 'Alabama', 'Achilles', 'Academy_Award_for_Best_Production_Design', 'Academy_Awards', 'Altruism', 'Ayn_Rand', 'Algeria', 'List_of_Atlas_Shrugged_characters', 'Alchemy', 'Alien', 'Astronomer', 'ASCII', 'Animation', 'Apollo', 'Andre_Agassi', 'Afroasiatic_languages', 'Andorra', 'Animal_Farm', 'Alaska', 'Aldous_Huxley', 'Algae', 'Analysis_of_variance', 'America_the_Beautiful', 'Assistive_technology', 'Abacus', 'Asphalt', 'Apollo_11', 'Apollo_8', 'A_Modest_Proposal', 'Alphabet', 'Anatomy', 'Andrei_Tarkovsky', 'Aardvark', 'Adobe', 'Adventure', 'Asia', 'Aruba', 'Articles_of_Confederation', 'Atlantic_Ocean', 'Angola', 'Android_(robot)', 'Alberta', 'Talk:Animal', 'Albert_Einstein', 'Albania', 'Allah', 'Azerbaijan', 'Ampere', 'Talk:American_football', 'Mouthwash', 'Asteroids_(video_game)', 'Aries_(constellation)', 'Aquarius_(constellation)', 'Ankara', 'Arabic', 'Anaconda', 'Talk:Afghanistan/Archive_6', 'Altaic_languages', 'Axiom_of_choice', 'Attila', 'Aegean_Sea', 'A_Clockwork_Orange_(novel)', 'Audi', 'Alfred_Nobel', 'Alexander_Graham_Bell', 'Anatolia', 'Apple_Inc.', 'Andy_Warhol', 'Akira_Kurosawa', 'Ancient_Egypt', 'Motor_neuron_disease', 'ABBA', 'MessagePad', 'Anna_Kournikova', 'Agnosticism', 'Antimony', 'Atom', 'Anglican_Communion', 'Archipelago', 'Author', 'Anxiety', 'A._A._Milne', 'Axiom', 'Antigua_and_Barbuda', 'Albert_Speer', 'Asteraceae', 'Ada_Lovelace', 'Alps', 'Agatha_Christie', 'Absolute_value', 'Hercule_Poirot', 'Miss_Marple', 'April', 'August', 'Aaron', 'Allen_Ginsberg', 'Anatoly_Karpov', 'Auto_racing', 'Aristophanes', 'Albert_Schweitzer', 'Aarhus', "All_Souls'_Day", 'Almond', 'Azerbaijani_Armed_Forces', 'Armed_Forces_of_Armenia', 'Foreign_relations_of_Armenia', 'August_13', 'Avicenna', 'The_Ashes', 'Abner_Doubleday', 'Amplitude_modulation', 'Assembly_line', 'Adelaide', 'Accordion', 'Anaximander', 'Architect', 'Abbreviation', 'Aphrodite', 'April_1', 'Aleister_Crowley', 'Athena', 'Alloy', 'Angle', 'Acoustics', 'American_Sign_Language', 'Alternate_history', 'Atomic_orbital', 'Alan_Turing', 'Area', 'Astronomical_unit', 'Artist', 'Anglicanism', 'Athens', 'Anguilla', 'Ashoka', 'American_(word)', 'Alfonso_Cuarón', 'Antoninus_Pius', 'August_3', 'Advanced_Encryption_Standard', 'Analytical_Engine', 'Augustus', 'List_of_governors_of_Alabama', 'Apocrypha', 'Antarctic_Treaty_System', 'Ames,_Iowa', 'Abalone', 'Arminianism', 'The_Alan_Parsons_Project', 'Antimatter', 'April_16', 'Americans_with_Disabilities_Act_of_1990', 'Apple_I', 'Apatosaurus', 'Allosaurus', 'AK-47', 'Anchor', 'Anagram', 'André-Marie_Ampère', 'Ammonia', 'Amethyst', 'Albertosaurus', 'Assembly_language', 'Ambrose', 'Amber', 'Army', 'Arachnophobia', 'Talk:Alan_Turing', 'Amazing_Grace', 'AOL', 'August_14', 'Absolute_zero', 'Adiabatic_process', 'Animism', 'Antonio_Vivaldi', 'Adrian', 'Abraham', 'Acacia_sensu_lato', 'Acapulco', 'APL_(programming_language)', 'Apollo_program', 'Assault', 'August_17', 'August_12', 'Alfred_Russel_Wallace', 'Australian_Labor_Party', 'August_18', 'August_21', 'August_25', 'Aachen', 'Ainu_people', 'Acupuncture', 'Aeneas', 'Amaranth', 'Agamemnon', 'Agrippina_the_Younger', 'American_Chinese_cuisine', 'Ahmad_Shah_Durrani', 'Akkadian_Empire', 'Ajax_the_Great', 'Albertus_Magnus', 'Afonso_de_Albuquerque', 'Alexander_III_of_Russia', 'Alexander', 'Andrew_Johnson', 'Aleksandr_Solzhenitsyn', 'Aberdeen', 'Antipope', 'Aquaculture', 'April_28', 'Alfred_the_Great', 'Algiers', 'Ibn_al-Haytham', 'Almoravid_dynasty', 'Aloe', 'Age_of_consent', 'Alfonso_XIII_of_Spain', 'Ambergris', 'Amazon_River', 'Abu_Bakr', 'Andaman_Islands', 'Apollo_13', 'Apollo_9', 'Arthritis', 'April_2', 'Alexander_Selkirk', 'Anti-ballistic_missile', 'Acre', 'Adenosine_triphosphate', 'Antibiotic', 'Arnold_Schwarzenegger', 'Amway', 'Adam_Smith', 'Talk:Austrian_School', 'Antoine_Lavoisier', 'April_23', 'Amitabh_Bachchan', 'Allegory', 'Archimedes', 'Alternative_medicine', 'Approval_voting', 'Arizona_State_University', 'Talk:Aikido', 'Astoria,_Oregon', 'ASCII_art', 'American_English', 'Australian_English', 'American_Airlines_Flight_77', 'Allele', 'Antimicrobial_resistance', 'Al-Qaeda', 'Talk:Aluminium', 'Alessandro_Volta', 'Andromeda_(mythology)', 'Arkansas', 'Andrew_Carnegie', 'Airline', 'Ally_McBeal', 'American_Civil_Liberties_Union', 'Adobe_Inc.', 'Alexander_Technique', 'Apparent_magnitude', 'Apollo_1', 'Apollo_12', 'Apollo_15', 'Apollo_17', 'Alpha_Centauri', 'Abel_Tasman', 'August_5', 'Auschwitz_concentration_camp', 'Archery', 'Alvar_Aalto', 'Aeschylus', 'Andrew_Wiles', 'Delian_League', 'Ares', 'Alexander_Grothendieck', 'Alcoholics_Anonymous', 'Array_data_structure', 'Advance_Australia_Fair', 'Amerigo_Vespucci', 'Auguste_Rodin', 'Talk:HIV/AIDS', 'Act_of_Settlement_1701', 'Aircraft_hijacking', 'Acropolis_of_Athens', 'Adam_Weishaupt', 'Auguste_and_Louis_Lumière', 'Acts_of_the_Apostles', 'Aphasia', 'Asterix', 'Arizona_Cardinals', 'Atlanta_Falcons', 'Heathenry_in_the_United_States', 'Apple_II_series', 'AVL_tree'];
+
+        /*initiate the autocomplete function on the "myInput" element, and pass along the countries array as possible autocomplete values:*/
+        autocomplete(document.getElementById("myInput"), article_titles);
+    </script>
+
+    </body>
 </html>
