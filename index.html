@@ -5,12 +5,15 @@
         <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
         <script type="text/javascript" src="engagement_scores.json"></script>
         <style>
+
+
         * {
           box-sizing: border-box;
         }
 
         body {
           font: 16px Arial;
+          margin: 5%;
         }
 
         /*the container must be positioned relative:*/
@@ -71,7 +74,7 @@
 
     <body>
 
-    <h2>Autocomplete</h2>
+    <h2>DSC 180B Wikipedia Article Engagement Score</h2>
 
     <p>Start typing:</p>
 
@@ -80,7 +83,6 @@
         <div class="autocomplete" style="width:300px;">
             <input id="myInput" type="text" placeholder="Country">
         </div>
-            <input type="submit" onclick=drawEngagement()>
     </form>
 
     <div id="linechart_div" style="margin-top: 30px; width: 50%;"></div>
@@ -100,10 +102,7 @@
             dataGraph.addColumn('number', 'Content Score');
             dataGraph.addColumn('number', 'Engagement Score');
 
-            console.log(data)
-
             data[article_title].forEach(function updateGraph(l) {
-                console.log(l)
                 dataGraph.addRow(
                         [new Date(l[0]), l[1], l[2] , l[3] ]
                 );
