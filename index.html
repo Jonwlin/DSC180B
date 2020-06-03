@@ -105,7 +105,8 @@
       <p><b>Supply:</b> We characterize the supply of Wikipedia content as edit history data which gives us factors such as how much the byte size of a page has changed over time and how many edits a Wikipedia page has undergone</p>
       <p><b>Demand:</b> We characterize the demand of Wikipedia content as Wikipedia page views data, which gives us the factor of how many users are consuming the information on a given Wikipedia page</p>
     
-
+    <br>
+    <h3>Type In an Article Name Below</h3>
     <!--Make sure the form has the autocomplete function switched off:-->
     <form autocomplete="off">
         <div class="autocomplete" style="width:300px;">
@@ -114,20 +115,52 @@
     </form>
 
     <div id="linechart_div" style="margin-top: 30px; width: 50%;"></div>
+    <br>
 
-    <button type="button" class="collapsible">Editor Engagment Score</button>
+    <button type="button" class="collapsible">How To Use This Tool</button>
     <div class="content">
-      <p>editor score</p>
-      <img src="/website_data/editor_score.png" alt="Italian Trulli">
+      <p>Directions for navigating the site: <br><br>
+        Type in the name of an article from the list provided into the search bar. Your search will generate a graph depicting the Editor Score over time (supply), the Content Score over time (demand), and the overall Engagement Score over time for the article.<br><br>
+        
+        Description for each graph/score: <br> <br>
+        
+        Editor Engagement: The editor engagement score encompasses engagement with the factors of the total number of edits, number of unique editors, and average byte size for each article for a given month. It indicates how much editor engagement has occurred, which alters the supply of content on a Wikipedia page <br><br>
+        
+        Content Engagement: The content engagement score encompasses engagement involving the amount of views a page receives on a given month. It indicates how much viewership a page receives, which indicates the demand for the given topic of a Wikipedia page.
+        </p>
+      
     </div>
-    <button type="button" class="collapsible">Content Engagement Score</button>
+    <button type="button" class="collapsible">Editor Engagment Score (Supply)</button>
     <div class="content">
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p>Editor score formula</p>
+      <img src="website_data/editor_score.png" alt="Italian Trulli" style="width:500px">
+    </div>
+    <button type="button" class="collapsible">Content Engagement Score (Demand)</button>
+    <div class="content">
+      <p>Content score formula</p>
+      <img src="website_data/content_score.png" alt="Italian Trulli" style="width:500px">
     </div>
     <button type="button" class="collapsible">Combined Engagement Score Score</button>
     <div class="content">
-      <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+      <p> To get our join user engagement score for an article per month, we combined our two scores: <br> <br>
+        Overall_Score = Editor_Score * Content_Score <br> <br>
+      
+      For a given month, we now have a way of characterizing user engagement for a specific Wikipedia article using this formula. <br>
+            
+      Notice that compared to the editor engagement and content engagement score graphs, the combined graphs show that there is a reduction in noise and an emphasis in the spikes that appeared in the graphs of the separate scores. The editor engagement score captures every single minor change in content, so its score alone is almost an overstatement of how engaging an article is. Minimizing some of that excess noise was important in creating our overall user engagement score.
+      We can also see that there aren’t many points where both page views and byte size of the page increase and/or change. This also indicates what the supply and demand of a page’s content looks like. We can see that there isn’t always a perfectly equal contribution of supply and demand on a page, which is reflective of the real world we live in. 
+      </p>
     </div>
+    <button type="button" class="collapsible">Suggested Articles</button>
+    <div class="content">
+      <p>Suggested Wikipedia articles to look at: <br><br>
+
+        <b>American League Championship Series (MLB Championship):</b> You can clearly see the cyclical spikes in engagement that are correlated to the MLB Championship seasons. We would expect to see higher viewership and a larger amount of contributions to the Wikipedia page during each season.<br><br>
+        
+        <b>Blizzard Entertainment:</b> You can clearly see the significant spike in engagement that is correlated with the news event in October 2019 when Blizzard Entertainment employees staged a walkout to protest the ban of an employee who voiced support for the Hong Kong protests during an official event.<br><br> 
+        </p>
+    </div>
+    
     <p></p>
 
     <script>
