@@ -287,7 +287,7 @@ class MetadataRevision:
         return self.revision_id
         
 #parse the file, calculate lightdump information, output to outfile
-def parse_metadata_to_lightdump(filepath, outfile, outdir, articles=[]):
+def parse_metadata_to_lightdump(filepath, outfile, outdir, articles=[], num_articles=3000, min_revisions=100):
 
     from lxml import etree
     import re
@@ -296,6 +296,8 @@ def parse_metadata_to_lightdump(filepath, outfile, outdir, articles=[]):
     nsmap = {'ns': 'http://www.mediawiki.org/xml/export-0.10/'}
 
     article_count = len(articles) if len(articles) != 0 else -1
+    
+    curr_count = 0
     
     revi_header = "^^^_"
 
@@ -311,7 +313,7 @@ def parse_metadata_to_lightdump(filepath, outfile, outdir, articles=[]):
     with open(outdir + "/" + outfile, 'w') as file:
         file.write("")
         
-    with open(outdir + "/" + 'article_titles.txt', 'a') as article_file:
+    with open(outdir + "/" + 'article_titles.txt', 'w') as article_file:
         article_file.write("")
 
     for event, elem in context:
@@ -386,9 +388,11 @@ def parse_metadata_to_lightdump(filepath, outfile, outdir, articles=[]):
                     page_results.append(temp_rev)
                     version += 1
         
-        if len(articles) == 0 or page_title in articles:
+        if len(page_results) > min_revisions and (len(articles) == 0 or page_title in articles):
             article_count -= 1
-    
+                
+            curr_count += 1
+            
             print("Writing {} {} revisions to {}".format(page_title, len(page_results), outfile))
             with open(outdir + "/" + outfile, 'a') as file:
                 with open(outdir + "/" + 'article_titles.txt', 'a') as article_file:
@@ -403,6 +407,9 @@ def parse_metadata_to_lightdump(filepath, outfile, outdir, articles=[]):
             del elem.getparent()[0]
 
         if article_count != -1 and article_count == 0:
+            break
+            
+        if curr_count >= num_articles:
             break
 
     del context
