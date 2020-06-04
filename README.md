@@ -7,6 +7,10 @@ cd DSC180B
 python run.py test-project
 ```
 
+```
+launch-scipy-ml.sh -i jwlin/wiki-engagement:latest
+```
+
 **./data/raw/zips** - holds all the zipped files from wikidump / lightdump
 
 **./data/raw/extracted** - holds all the extracted zip files
