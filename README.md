@@ -8,7 +8,7 @@ python run.py test-project
 ```
 
 ```
-launch-scipy-ml.sh -i jwlin/wiki-engagement:latest
+launch-scipy-ml.sh -i jwlin/wiki-engagement
 ```
 
 **./data/raw/zips** - holds all the zipped files from wikidump / lightdump
