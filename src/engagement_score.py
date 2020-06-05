@@ -60,7 +60,7 @@ def create_wiki_graph(lightdump_file, article_title, outdir):
     plt.show()
     return (fig)
 
-def lightdump_to_db(lightdump_file, outfile, num_articles=3000):
+def lightdump_to_db(lightdump_file, outfile, num_articles):
     """Convert Lightdump to DB file averaging across Months
 
     Keyword arguments:
@@ -71,7 +71,6 @@ def lightdump_to_db(lightdump_file, outfile, num_articles=3000):
     timestamps = []
     byte_size = []
     revision_count = 0
-    num_reverts = 0
     unique_authors = set()
     start = False
     editor = []
@@ -91,39 +90,42 @@ def lightdump_to_db(lightdump_file, outfile, num_articles=3000):
 
     with open(lightdump_file) as lightdump:
         for line in lightdump:
-#             print(line)
             temp_line = line.strip().split(" ")
 
             if start and len(temp_line) == 5 and temp_line[2] == '1':
                 start = False
-                article = pd.DataFrame({"article": article_title, "timestamp": timestamps[::-1], "byte_size": byte_size[::-1], "editor": editor[::-1]})
+                article = pd.DataFrame({"article": article_title, 
+                                        "timestamp": timestamps[::-1], 
+                                        "byte_size": byte_size[::-1], 
+                                        "editor": editor[::-1]})
                 article.index = article['timestamp']
+                
                 if len(article) == 0:
                     timestamps = []
                     byte_size = []
                     editor = []
-                    num_reverts = 0
                     revision_count = 0
                     start = True
                     article_title = temp_line[0]
                     continue
-                grouped_article = article.groupby(pd.Grouper(freq='M')).agg({'byte_size' : np.mean, 'editor' :['count', 'nunique']})
+                grouped_article = article.groupby(pd.Grouper(freq='M')).agg({'byte_size' : np.mean, 
+                                                                             'editor' :['count', 'nunique']})
+                
                 grouped_article['article_title'] = [article_title for x in range(len(grouped_article))]
-#                 grouped_article.dropna(axis="rows", inplace=True)
                 grouped_article.columns = ['avg_byte_size', 'num_editor', 'nunique_editors', 'article_title']
-        
                 grouped_article['timestamp'] = grouped_article.index
                 
                 # Write to SQL Table
                 grouped_article.to_sql('ARTICLES', conn, if_exists='append', index=False)
             
-                print(str(article_count) + ": FINISHED LIGHTDUMP PARSE FOR:   " + str(article_title) + "\t\t NUM REVISIONS: " + str(revision_count))
-                num_reverts = 0
+                print(str(article_count+1) + ": FINISHED LIGHTDUMP PARSE FOR:   " + 
+                      str(article_title) + "\t\t NUM REVISIONS: " + str(revision_count))
                 revision_count = 0
                 article_count += 1
                 timestamps = []
                 byte_size = []
                 editor = []
+                
                 if article_count > num_articles:
                     break
 
@@ -131,14 +133,12 @@ def lightdump_to_db(lightdump_file, outfile, num_articles=3000):
                 timestamps.append(datetime.strptime(temp_line[0][4:], '%Y-%m-%dT%H:%M:%SZ'))
                 byte_size.append(int(temp_line[3]))
                 revision_count += 1
-                num_reverts += int(temp_line[1])
                 editor.append(temp_line[4])
                 article_titles.append(article_title)
 
             if not start and len(temp_line) == 1:
                 start = True
                 article_title = temp_line[0]
-    
     
     print("Exporting to DB File")
     conn.commit()
@@ -173,23 +173,43 @@ def selectArticlesDB(dbfile, article_titles):
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     return df
 
-def editor_engagement_score(df, outdir="./data/out"):
-    """ calculate the editor engagement score given a dataframe from lightdump parsing
+def editor_engagement_score(df, outfile):
+    names = list(df['article_title'].unique())
+    editor_scores = []
+    temp_df = df
     
-    Keyword arguments:
-    df -- dataframe with articles averaged over month
-    outdir -- outdir for the csv file output
-    """
-    diff_edits = [df['edits'][x] - df['edits'][x-1] for x in range(1, len(df))]
+    #Diff between num edits per month
+    diff_edits = [df['edits'][x] - df['edits'][x-1] for x in range(1, len(df))] 
     diff_edits.insert(0,0)
-    df['std_diff_edits'] = (diff_edits - np.mean(diff_edits)) / np.std(diff_edits)
-    diff_nunique = [df['nunique_editors'][x] - df['nunique_editors'][x-1] for x in range(1, len(df))]
+    temp_df['diff_edits'] = diff_edits
+    
+    # diff between num unique editors per month
+    diff_nunique = [df['nunique_editors'][x] - df['nunique_editors'][x-1] for x in range(1, len(df))] 
     diff_nunique.insert(0, 0)
-    df['std_diff_nunique'] = (diff_nunique - np.mean(diff_nunique)) / np.std(diff_nunique)
-    df['editor_engagement'] = df['std_diff_edits'] * df['std_diff_nunique']
-    df.to_csv(outdir + "/editor_engagement.csv", index=False)
+    temp_df['diff_nunique'] = diff_nunique
 
-    return df[['timestamp', 'std_diff_edits', 'std_diff_nunique', 'editor_engagement']]
+    outdf = pd.DataFrame(columns=['article_title', 'timestamp', 'editor_score'])
+
+    for i in range(len(names)):
+        print(str(i) + ": " + names[i])
+        current_edits = df[df['article_title'] == names[i]]['diff_edits']
+        current_nunique = df[df['article_title'] == names[i]]['diff_nunique']
+        
+        std_diff_edits = (current_edits - np.mean(current_edits)) / np.std(current_edits)
+        std_diff_nunique = (current_nunique - np.mean(current_nunique)) / np.std(current_nunique)
+        
+        editor_score = std_diff_edits * std_diff_nunique
+        
+        article_df = pd.DataFrame({"article_title":[names[i] for _ in range(len(editor_score))], 
+                                   "timestamp": df[df['article_title'] == names[i]]['timestamp'], 
+                                   "editor_score": editor_score,
+                                   "std_diff_nunique": std_diff_nunique,
+                                   "std_diff_edits": std_diff_edits})
+        
+        outdf = pd.concat([outdf, article_df])
+
+    outdf.to_csv(outfile, mode='w', index=False)
+    return outdf
 
 
 #kenny's functions
