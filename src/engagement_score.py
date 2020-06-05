@@ -215,39 +215,42 @@ def editor_engagement_score(df, outfile):
 #kenny's functions
 
 def get_page_views(article_names, output_path):
+    """Query the Wikipedia page views api for the relevant pages
+
+    Keyword arguments:
+    article_names -- array of article names to query
+    output_path -- output path for the csv file output
+    """
     p = PageviewsClient(user_agent="kez070@ucsd.edu Selfie, Cat, and Dog analysis")
 
-#     #read the text file with all article names
-#     articles = open(article_txt_path, 'r') 
-#     article_names = []
-#     Lines = articles.readlines() 
-#     for line in Lines:
-#         article_names.append(line.rstrip())
         
     #100 articles at a time query the api for the page views data
     main_dfs = []
-#     if len(article_names) > 100:
-#         for i in range(100,len(article_names),100):
-    values = p.article_views('en.wikipedia',article_names, granularity='monthly', start='20150101', end='20200401')
-    all_keys = list(values.keys())
-    all_keys.sort()
-    val_dict = []
-    for x in article_names:
-        for key in all_keys:
-            val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
-    df = pd.DataFrame(val_dict)
-    main_dfs.append(df)
-#     else:
-#         values = p.article_views('en.wikipedia',article_names[0:len(article_names)], granularity='monthly', start='20150101', end='20200401')
-#         all_keys = list(values.keys())
-#         all_keys.sort()
-#         val_dict = []
-# #         print(values)
-#         for x in article_names:
-#             for key in all_keys:
-#                 val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
-#         df = pd.DataFrame(val_dict)
-#         main_dfs.append(df)
+    if len(article_names) > 100:
+        length = len(article_names)
+        if len(article_names) %100 == 0:
+            length = length+1
+        for i in range(100,length,100):
+            values = p.article_views('en.wikipedia',article_names, granularity='monthly', start='20150101', end='20200401')
+            all_keys = list(values.keys())
+            all_keys.sort()
+            val_dict = []
+            for x in article_names:
+                for key in all_keys:
+                    val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
+            df = pd.DataFrame(val_dict)
+            main_dfs.append(df)
+    else:
+        values = p.article_views('en.wikipedia',article_names[0:len(article_names)], granularity='monthly', start='20150101', end='20200401')
+        all_keys = list(values.keys())
+        all_keys.sort()
+        val_dict = []
+#         print(values)
+        for x in article_names:
+            for key in all_keys:
+                val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
+        df = pd.DataFrame(val_dict)
+        main_dfs.append(df)
         
     #write the resultant dataframe to a csv output
     for i in range(len(main_dfs)):
@@ -259,6 +262,14 @@ def get_page_views(article_names, output_path):
     return df
     
 def content_engagement_score(page_views_path, page_sizedb_path, output_path):
+    """Calculate the content engagement score
+
+    Keyword arguments:
+    page_views_path -- path that contains the csv with page views data
+    page_sizedb_path -- path for db file that contains page size data
+    output_path -- output path for the csv file output
+    """
+
     pd.set_option('mode.chained_assignment', None)
 
     df = pd.read_csv(page_views_path)
@@ -284,8 +295,7 @@ def content_engagement_score(page_views_path, page_sizedb_path, output_path):
         current_name = names[i]
         current_size = size_df[size_df['article_title']==current_name]
         current_views = view_df[view_df['article_title']==current_name]
-    #     print(current_size.head())
-    #     print(current_views.head())
+
         current_size['avg_byte_size'] = (current_size['avg_byte_size']-current_size['avg_byte_size'].mean())/current_size['avg_byte_size'].std()
         current_views['views'] = current_views['views'].transform(lambda x: (x - x.mean()) / x.std())
 
@@ -303,8 +313,7 @@ def content_engagement_score(page_views_path, page_sizedb_path, output_path):
 
         except:
             continue
-#             print(current_name)
-#             print("this article didnt go up to 2020 maybe")
+
 
     print("Writing Content Engagement Score to -- " + output_path)
     df = pd.DataFrame(scores, columns =['article_title', 'timestamp', 'content_engagement']) 
@@ -312,8 +321,3 @@ def content_engagement_score(page_views_path, page_sizedb_path, output_path):
     
     return df
     
-
-
-### example calls
-# get_page_views('not_used/article_titles.txt','page_views.csv')
-# content_engagement_score("page_views.csv", "articles.db", "final_score.csv")
