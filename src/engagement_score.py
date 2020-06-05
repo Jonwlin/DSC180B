@@ -174,6 +174,12 @@ def selectArticlesDB(dbfile, article_titles):
     return df
 
 def editor_engagement_score(df, outfile):
+    """Calculate the Editor Engagement Scores for the Entire DF
+
+    Keyword arguments:
+    df -- df containing metrics and article metadata
+    outfile -- outfile of csv for editor scores
+    """
     names = list(df['article_title'].unique())
     editor_scores = []
     temp_df = df
@@ -209,8 +215,48 @@ def editor_engagement_score(df, outfile):
         outdf = pd.concat([outdf, article_df])
 
     outdf.to_csv(outfile, mode='w', index=False)
+    outdf = outdf.reset_index()
+    print("Finished Calculating Editor Scores for {} articles".format(len(names)))
     return outdf
 
+def joint_engagement(content_scores, editor_scores, outfile):
+    """ Calculate the Joint Engagement Score
+    
+    Using content score and editor score, multiply and return DF
+    Also write to CSV outfile
+    
+    Keyword arguments:
+    content_scores -- content scores dataframe with article titles and timestamps
+    editor_scores -- editor scores dataframe with article titles and timestamp
+    outfile -- outfile for csv
+    """
+    joint_df = pd.DataFrame(columns=['article_title', 'timestamp', 'editor_score', 'content_score', 'engagement_score'])
+    articles = list( set(content_scores['article_title']).intersection( set(editor_scores['article_title']))) 
+    
+    for i in range(len(articles)):
+#         print(str(i) + ": " + articles[i])
+        article_title = articles[i]
+        temp_df = editor_scores[(editor_scores['timestamp'] > '2015-08-01') 
+                                & (editor_scores['article_title'] == article_title)]
+        
+        editor_engagement = list(temp_df['editor_score'])
+        timestamps = list(temp_df['timestamp'])
+        
+        content_engagement = list(content_scores[content_scores['article_title'] == article_title]['content_engagement'])
+        
+        joint_score = [editor_engagement[i] * content_engagement[i] for i in range(len(editor_engagement))]
+    
+        article_df = pd.DataFrame({"article_title": temp_df['article_title'], 
+                               "timestamp": timestamps,
+                               "editor_score": editor_engagement, 
+                               "content_score": content_engagement, 
+                               "engagement_score": joint_score})
+        
+        joint_df = pd.concat([joint_df, article_df])
+    joint_df.to_csv(outfile, mode='w', index=False)
+    print("Finished Calculating Joint Engagement Scores for {} articles".format(len(articles)))
+    joint_df = joint_df.reset_index()
+    return joint_df
 
 #kenny's functions
 
@@ -256,8 +302,10 @@ def get_page_views(article_names, output_path):
     for i in range(len(main_dfs)):
         main_dfs[i] = main_dfs[i].fillna(0)
     df = pd.concat(main_dfs)
-    print("Writing Page View Data to -- " + output_path)
-    df.to_csv(output_path)
+    
+    print("Writing Page View Data to -- " + output_path + " -- for " + str(len(dfs)) + " articles")
+    
+    df.to_csv(output_path, mode='w', index=False)
     
     return df
     
@@ -293,6 +341,7 @@ def content_engagement_score(page_views_path, page_sizedb_path, output_path):
     scores = []
     for i in range(len(names)):
         current_name = names[i]
+        print(str(i) + ": " + names[i])
         current_size = size_df[size_df['article_title']==current_name]
         current_views = view_df[view_df['article_title']==current_name]
 
@@ -316,8 +365,11 @@ def content_engagement_score(page_views_path, page_sizedb_path, output_path):
 
 
     print("Writing Content Engagement Score to -- " + output_path)
+    print("Finished Calculating Editor Scores for {} articles".format(len(names)))
+
     df = pd.DataFrame(scores, columns =['article_title', 'timestamp', 'content_engagement']) 
-    df.to_csv(output_path)
+    df.to_csv(output_path, mode='w', index=False)
+    df = df.reset_index()
     
     return df
     
