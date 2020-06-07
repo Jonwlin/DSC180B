@@ -271,39 +271,48 @@ def get_page_views(article_names, output_path):
 
         
     #100 articles at a time query the api for the page views data
-    main_dfs = []
-    if len(article_names) > 100:
-        length = len(article_names)
-        if len(article_names) %100 == 0:
-            length = length+1
-        for i in range(100,length,100):
-            values = p.article_views('en.wikipedia',article_names, granularity='monthly', start='20150101', end='20200401')
-            all_keys = list(values.keys())
-            all_keys.sort()
-            val_dict = []
-            for x in article_names:
-                for key in all_keys:
-                    val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
-            df = pd.DataFrame(val_dict)
-            main_dfs.append(df)
-    else:
-        values = p.article_views('en.wikipedia',article_names[0:len(article_names)], granularity='monthly', start='20150101', end='20200401')
-        all_keys = list(values.keys())
-        all_keys.sort()
-        val_dict = []
-#         print(values)
-        for x in article_names:
-            for key in all_keys:
-                val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
-        df = pd.DataFrame(val_dict)
-        main_dfs.append(df)
-        
-    #write the resultant dataframe to a csv output
-    for i in range(len(main_dfs)):
-        main_dfs[i] = main_dfs[i].fillna(0)
-    df = pd.concat(main_dfs)
+    # main_dfs = []
+#     if len(article_names) > 100:
+#         length = len(article_names)
+#         if len(article_names) %100 == 0:
+#             length = length+1
+#         for i in range(100,length,100):
+#             values = p.article_views('en.wikipedia',article_names[i-100,i], granularity='monthly', start='20150101', end='20200401')
+#             all_keys = list(values.keys())
+#             all_keys.sort()
+#             val_dict = []
+#             for x in article_names:
+#                 for key in all_keys:
+#                     val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
+#             df = pd.DataFrame(val_dict)
+#             main_dfs.append(df)
+#     else:
+#         values = p.article_views('en.wikipedia',article_names[0:len(article_names)], granularity='monthly', start='20150101', end='20200401')
+#         all_keys = list(values.keys())
+#         all_keys.sort()
+#         val_dict = []
+# #         print(values)
+#         for x in article_names:
+#             for key in all_keys:
+#                 val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
+#         df = pd.DataFrame(val_dict)
+#         main_dfs.append(df)
     
-    print("Writing Page View Data to -- " + output_path + " -- for " + str(len(dfs)) + " articles")
+    values = p.article_views('en.wikipedia',article_names, granularity='monthly', start='20150101', end='20200401')
+    all_keys = list(values.keys())
+    all_keys.sort()
+    val_dict = []
+    for x in article_names:
+        for key in all_keys:
+            val_dict.append({"article_title":x,"timestamp":key, "views":values[key][x]})
+    df = pd.DataFrame(val_dict)
+    df = df.fillna(0)
+    #write the resultant dataframe to a csv output
+    # for i in range(len(main_dfs)):
+    #     main_dfs[i] = main_dfs[i].fillna(0)
+    # df = pd.concat(main_dfs)
+    
+    print("Writing Page View Data to -- " + output_path + " -- for " + str(len(df.article_title.unique())) + " articles")
     
     df.to_csv(output_path, mode='w', index=False)
     
