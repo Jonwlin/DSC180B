@@ -216,7 +216,8 @@ def editor_engagement_score(df, outfile):
 
     outdf.to_csv(outfile, mode='w', index=False)
     outdf = outdf.reset_index()
-    print("Finished Calculating Editor Scores for {} articles".format(len(names)))
+    print("Finished Calculating Editor Scores for {} articles".format(outdf['article_title'].nunique()))
+    
     return outdf
 
 def joint_engagement(content_scores, editor_scores, outfile):
@@ -277,6 +278,7 @@ def get_page_views(article_names, output_path):
         if len(article_names) %100 == 0:
             length = length+1
         for i in range(100,length,100):
+            print("Page View for {} Articles Fetched".format(i))
             values = p.article_views('en.wikipedia',article_names, granularity='monthly', start='20150101', end='20200401')
             all_keys = list(values.keys())
             all_keys.sort()
@@ -303,7 +305,7 @@ def get_page_views(article_names, output_path):
         main_dfs[i] = main_dfs[i].fillna(0)
     df = pd.concat(main_dfs)
     
-    print("Writing Page View Data to -- " + output_path + " -- for " + str(len(dfs)) + " articles")
+    print("Writing Page View Data to -- " + output_path + " -- for " + str(len(df)) + " articles")
     
     df.to_csv(output_path, mode='w', index=False)
     

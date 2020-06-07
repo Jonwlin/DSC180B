@@ -1,5 +1,8 @@
 {
     "num_files_download": 1,
-    "outdir": "./data",
-    "articles": ["Aardvark", "Blizzard_Entertainment", "American_League_Championship_Series"]
+    "data_dir": "./data",
+    "articles": ["Blizzard_Entertainment", "American_League_Championship_Series"],
+    "metadate": "20200401",
+    "num_articles_to_process": 1500,
+    "min_revisions" : 800
 }

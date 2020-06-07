@@ -217,18 +217,21 @@ def parse_metadata_to_lightdump(filepath, outfile, outdir, articles, num_article
         curr_article_count += 1
             
         # Write to lightdump file
-        print(str(curr_article_count) + ": Writing {} {} revisions to {}".format(page_title, len(page_revisions), outfile))
+#         print(str(curr_article_count) + ": Writing {} {} revisions to {}".format(page_title, len(page_revisions), outfile))
         with open(outdir + "/" + outfile, 'a') as file:
             with open(outdir + "/" + 'article_titles.txt', 'a') as article_file:
                 file.write(page_title.strip() + '\n')
                 article_file.write(page_title.strip() + "\n")
                 for i in range(len(page_revisions) - 1, -1, -1):
                     file.write(page_revisions[i].__str__() + "\n")
+                    
             
         # Release XML article from memory
         elem.clear()
         while elem.getprevious() is not None:
             del elem.getparent()[0]
+    
+    print("Finished writing {} articles to {}".format(curr_article_count, outfile))
 
     del context
     
