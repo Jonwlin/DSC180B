@@ -125,7 +125,7 @@ def main(targets):
         num_articles_to_process = test_params['num_articles_to_process']
         min_revisions = test_params['min_revisions']
         
-        print("Parsing Wikidump to Lightdump")
+        print("Parsing Wikidump to Lightdump for {} articles".format(num_articles_to_process))
         
         articles = test_params['articles']
         
