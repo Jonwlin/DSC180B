@@ -218,7 +218,7 @@ def parse_metadata_to_lightdump(filepath, outfile, outdir, articles, num_article
             
         # Write to lightdump file
         if curr_article_count % 100 == 0: 
-            print(str(curr_article_count) + ": Writing {} {} revisions to {}".format(page_title, len(page_revisions), outfile))
+            print(str(curr_article_count) + "/" + num_articles + ": Writing {} {} revisions to {}".format(page_title, len(page_revisions), outfile))
         with open(outdir + "/" + outfile, 'a') as file:
             with open(outdir + "/" + 'article_titles.txt', 'a') as article_file:
                 file.write(page_title.strip() + '\n')

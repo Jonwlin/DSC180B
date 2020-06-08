@@ -199,7 +199,7 @@ def editor_engagement_score(df, outfile):
 
     for i in range(len(names)):
         if (i+1) % 100 == 0:
-            print(str(i+1) + ": " + names[i])
+            print(str(i+1) + "/" + str(len(names)))
         current_edits = df[df['article_title'] == names[i]]['diff_edits']
         current_nunique = df[df['article_title'] == names[i]]['diff_nunique']
         
@@ -322,7 +322,7 @@ def content_engagement_score(page_views_path, page_sizedb_path, output_path):
     for i in range(len(names)):
         current_name = names[i]
         if (i+1) % 100 == 0:
-            print(str(i+1) + ": " + names[i])
+            print(str(i+1) + "/" + str(len(names)))
         current_size = size_df[size_df['article_title'] == current_name]
         current_views = view_df[view_df['article_title'] == current_name]
 
